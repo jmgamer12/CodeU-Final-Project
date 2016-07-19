@@ -264,7 +264,6 @@ public class WikiSearch {
 		} return final_list;
 	}
 
-	/**
 	 * Performs a search and makes a WikiSearch object.
 	 * 
 	 * @param term
@@ -272,6 +271,7 @@ public class WikiSearch {
 	 * @return
 	 */
 	public static WikiSearch search(String term, JedisIndex index) {
+		//this needs to CHANGE
 		Map<String, Integer> map = index.getCounts(term);
 		return new WikiSearch(map);
 	}
