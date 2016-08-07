@@ -100,7 +100,7 @@ public class TermCounter {
 			String term = array[k];
 			if(i == 1){
 				if(first_sentence.size() <25){
-					first_sentence.add(term.toString());
+					first_sentence.add(term.toString().toLowerCase());
 				}
 				}
 			
@@ -194,6 +194,6 @@ public class TermCounter {
 		TermCounter counter = new TermCounter(url.toString());
 		counter.processElements(paragraphs);
 //		System.out.println(counter.getFirstSentence());
-		counter.printCounts();
+//		counter.printCounts();
 	}
 }

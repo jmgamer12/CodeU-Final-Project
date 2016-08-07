@@ -122,7 +122,7 @@ public class JedisIndex {
 		Map<String, Integer> map = new HashMap<String, Integer>();
 		int i = 0;
 		for (String url: urls) {
-			System.out.println(url);
+//			System.out.println(url);
 			Integer count = new Integer((String) res.get(i++));
 			map.put(url, count);
 		}
@@ -144,7 +144,7 @@ public class JedisIndex {
 	}
 	
 	public Map<String, Integer> getCountsForms(String term){
-		System.out.println("Start debugging here.....");
+//		System.out.println("Start debugging here.....");
 		Map<String, Integer> counter = new HashMap<String, Integer>();
 		
 		// convert the set of strings to a list so we get the
@@ -156,7 +156,7 @@ public class JedisIndex {
 		
 		// count from single word for every URL
 		Map<String, Integer> tdidf = getTDIDFCounts(term);
-		System.out.println("Original tdidf counts: " + tdidf);
+//		System.out.println("Original tdidf counts: " + tdidf);
 		
 		ArrayList<String> forms = new ArrayList<String>();
 		String last_char = term.substring(term.length() - 1);
@@ -173,7 +173,7 @@ public class JedisIndex {
 			forms.addAll(Arrays.asList(term+"ing",term+"s",term+"ed",term+"able",term+last_char+"ing",term+last_char+"ed",term+last_char+"able"));
 		}
 		
-		System.out.println("DIFFERENT WORD FORMS: " + forms);
+//		System.out.println("DIFFERENT WORD FORMS: " + forms);
 		
 		for (String URL: URLs){
 			
@@ -205,7 +205,7 @@ public class JedisIndex {
 		counter.put(URL, (int)final_count);
 		
 		}
-		System.out.println("FINAL MAP:" + tdidf);
+//		System.out.println("FINAL MAP:" + tdidf);
 		return counter;
 		
 	}
@@ -266,6 +266,50 @@ public class JedisIndex {
 		
 		// push the contents of the TermCounter to Redis
 		pushTermCounterToRedis(tc);
+
+	}
+	
+	public List<String> getSentence(String url,Elements paragraphs){
+		TermCounter tc = new TermCounter(url);
+		tc.processElements(paragraphs);
+		List<String> sentence = tc.getFirstSentence();
+		return sentence;
+	}
+	
+	
+	public Integer findSimilarity(List<String> sentence1, List<String> sentence2){
+		int count = 0;
+		for (String word: sentence2){
+			if (sentence1.contains(word) == true){
+				count = count + 1;
+			}
+		}
+		return count;
+	}
+	
+	public List<String> findMostSimilar(String url, Elements paragraphs) throws IOException{
+		List<String> most_similar = new ArrayList<String>();
+		WikiFetcher wf = new WikiFetcher();
+		
+		List<String> sent1 = getSentence(url, paragraphs);
+		List<String> sent2;
+		Elements paragraphs2;
+		int similarity = 0;
+		
+//		System.out.println("ALL KEYS: " + termCounterKeys());
+		
+		// might not be the right list of all urls in the index test this!
+		for (String index_url: termCounterKeys()){
+			String actual = index_url.substring(12);
+//			System.out.println(actual);
+			paragraphs2 = wf.readWikipedia(actual);
+			sent2 = getSentence(actual, paragraphs2);
+			similarity = findSimilarity(sent1, sent2);
+			if (similarity > 10){
+				most_similar.add(actual);
+			}
+		}
+		return most_similar;
 	}
 
 	/**
@@ -415,7 +459,7 @@ public class JedisIndex {
 		
 		//index.deleteTermCounters();
 		//index.deleteURLSets();
-//		index.deleteAllKeys();
+        index.deleteAllKeys();
 		loadIndex(index);
 		
 //		Map<String, Integer> map = index.getCountsFaster("the");
@@ -432,6 +476,7 @@ public class JedisIndex {
 	 */
 	private static void loadIndex(JedisIndex index) throws IOException {
 		WikiFetcher wf = new WikiFetcher();
+	
 
 		String url = "https://en.wikipedia.org/wiki/Java_(programming_language)";
 		Elements paragraphs = wf.readWikipedia(url);
@@ -449,14 +494,14 @@ public class JedisIndex {
 		paragraphs = wf.readWikipedia(url);
 		index.indexPage(url, paragraphs);
 		
-		url = "https://en.wikipedia.org/wiki/Knowledge";
-		paragraphs = wf.readWikipedia(url);
-		index.indexPage(url, paragraphs);
-		
-		url = "https://en.wikipedia.org/wiki/Mathematics";
-		paragraphs = wf.readWikipedia(url);
-		index.indexPage(url, paragraphs);
-		
+	    url = "https://en.wikipedia.org/wiki/Science";
+	    paragraphs = wf.readWikipedia(url);
+	    index.indexPage(url, paragraphs);
+//		
+	    url = "https://en.wikipedia.org/wiki/Mathematics";
+	    paragraphs = wf.readWikipedia(url);
+  	    index.indexPage(url, paragraphs);
+
 		url = "https://en.wikipedia.org/wiki/Modern_philosophy";
 		paragraphs = wf.readWikipedia(url);
 		index.indexPage(url, paragraphs);
@@ -465,11 +510,19 @@ public class JedisIndex {
 		paragraphs = wf.readWikipedia(url);
 		index.indexPage(url, paragraphs);
 		
-		url = "https://en.wikipedia.org/wiki/Science";
-		paragraphs = wf.readWikipedia(url);
-		index.indexPage(url, paragraphs);
+//		List<String> similar = index.findMostSimilar(url, paragraphs);
+//		System.out.println("SIMILAR: "+ similar);
 		
-		
+
+//		
+//		List<String> sent1 = index.getSentence(url, paragraphs);
+//		System.out.println("This is sent1" + sent1);
+//		
+//		List<String> sent2 = index.getSentence(url1, paragraphs1);
+//		System.out.println("This is sent2" + sent2);
+//		
+//		int count = index.findSimilarity(sent1,sent2);
+//		System.out.println("Difference is: " + count);
 		
 		
 	}

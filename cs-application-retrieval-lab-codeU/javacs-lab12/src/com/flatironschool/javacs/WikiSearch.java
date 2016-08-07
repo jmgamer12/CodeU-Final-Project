@@ -14,6 +14,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
+
+import org.jsoup.select.Elements;
+
 import java.lang.Object;
 
 import redis.clients.jedis.Jedis;
@@ -73,6 +76,11 @@ public class WikiSearch {
 		return relevance==null ? 0: relevance;
 	}
 	
+	public Entry<String, Integer> getTopEntry(){
+		List<Entry<String, Integer>> entries = sort();
+		return entries.get(0);
+	}
+	
 	/**
 	 * Prints the contents in order of term frequency.
 	 * 
@@ -80,6 +88,7 @@ public class WikiSearch {
 	 */
 	private  void print() {
 		List<Entry<String, Integer>> entries = sort();
+		
 		for (Entry<String, Integer> entry: entries) {
 			System.out.println(entry);
 		}
@@ -243,9 +252,9 @@ public class WikiSearch {
 		Collections.sort(sort_list);
 		
 //		System.out.println("SORTED LIST");
-		for (List_Item item: sort_list){
-			System.out.println(item.url);
-		}
+//		for (List_Item item: sort_list){
+//			System.out.println(item.url);
+//		}
 		
 		
 		List<Entry<String, Integer>> final_list = new ArrayList<Entry<String, Integer>>();
@@ -286,7 +295,8 @@ public class WikiSearch {
 //			Map.Entry<String,Integer> item_to_entry = new Map.Entry<String,Integer>(name,score);
 
 		} 
-		System.out.println("FINAL LIST: " + final_list);
+		Collections.reverse(final_list);
+//		System.out.println("FINAL LIST: " + final_list);
 		return final_list;
 	}
 
@@ -322,6 +332,17 @@ public class WikiSearch {
 			System.out.println("Query: " + input);
 			WikiSearch search1 = search(input, index);
 			search1.print();
+			
+			System.out.println("Based on page similarity, you might also like to read:");
+			WikiFetcher wf = new WikiFetcher();
+			String best_url = search1.getTopEntry().getKey();
+			Elements paragraphs = wf.readWikipedia(best_url);
+			List<String> recommendations = index.findMostSimilar(best_url, paragraphs);
+			for (String page: recommendations){
+				System.out.println(page);
+			}
+			
+			
 			
 		} while (!input.equals(""));
 		 sc.close();
