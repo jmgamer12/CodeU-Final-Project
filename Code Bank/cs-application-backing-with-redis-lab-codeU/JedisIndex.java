@@ -82,6 +82,7 @@ public class JedisIndex {
 	public Map<String, Integer> getCounts(String term) {
 		Map<String, Integer> counter = new HashMap<String, Integer>();
         Set<String> URLs = getURLs(term);
+        
 //        System.out.println(URLs);
         for (String URL: URLs){
         	int count = getCount(URL,term);

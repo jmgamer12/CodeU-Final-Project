@@ -1,5 +1,7 @@
 package com.flatironschool.javacs;
 
+
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,7 +12,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Scanner;
 import java.util.Set;
+
+import org.jsoup.select.Elements;
+
+import java.lang.Object;
 
 import redis.clients.jedis.Jedis;
 
@@ -69,6 +76,11 @@ public class WikiSearch {
 		return relevance==null ? 0: relevance;
 	}
 	
+	public Entry<String, Integer> getTopEntry(){
+		List<Entry<String, Integer>> entries = sort();
+		return entries.get(0);
+	}
+	
 	/**
 	 * Prints the contents in order of term frequency.
 	 * 
@@ -76,6 +88,7 @@ public class WikiSearch {
 	 */
 	private  void print() {
 		List<Entry<String, Integer>> entries = sort();
+		
 		for (Entry<String, Integer> entry: entries) {
 			System.out.println(entry);
 		}
@@ -88,13 +101,25 @@ public class WikiSearch {
 	 * @return New WikiSearch object.
 	 */
 	public WikiSearch or(WikiSearch that) {
+//		System.out.println("THIS");
+//		System.out.println(this.map.keySet());
+//		System.out.println(this.map.values());
+//		System.out.println("THAT");
+//		System.out.println(that.map.keySet());
+//		System.out.println(that.map.values());
 		
         Set<String> urls_1 = this.map.keySet();
         Set<String> urls_2 = that.map.keySet();
         Set<String> total_urls = new HashSet<String>(urls_1);
         total_urls.addAll(urls_2);
         
-
+//        System.out.println(total_urls.addAll(urls_2));
+//        System.out.println("MADE IT HERE");
+//        System.out.println(urls_1);
+//        System.out.println(urls_2);
+      
+//        System.out.println("UNION");
+//        System.out.println(total_urls);
         Map<String, Integer> final_map = new HashMap<String, Integer>();
         for (String url: total_urls){
         	if (urls_1.contains(url) && urls_2.contains(url)){
@@ -215,6 +240,9 @@ public class WikiSearch {
 	}
 	
 	public List<Entry<String, Integer>> sort() {
+//		System.out.println("ORIGINAL LIST");
+//		System.out.println(map.keySet());
+//		System.out.println(map.values());
 		
 		List<List_Item> sort_list = new ArrayList<List_Item>();
 		for (String url: map.keySet()){
@@ -223,10 +251,10 @@ public class WikiSearch {
 		}
 		Collections.sort(sort_list);
 		
-		System.out.println("SORTED LIST");
-		for (List_Item item: sort_list){
-			System.out.println(item.url);
-		}
+//		System.out.println("SORTED LIST");
+//		for (List_Item item: sort_list){
+//			System.out.println(item.url);
+//		}
 		
 		
 		List<Entry<String, Integer>> final_list = new ArrayList<Entry<String, Integer>>();
@@ -234,24 +262,28 @@ public class WikiSearch {
 			Map.Entry<String, Integer> empty = new MyEntry("nothing",0);
 			  final_list.add(empty);
 			}
-
+//		for (Map.Entry<String, Integer> item: final_list){
+//			System.out.println(item.getKey());
+//		}
 		
 		for (Entry<String,Integer> entry : map.entrySet()){
 			String name = entry.getKey();
-			System.out.println("ENTRY CONSIDERED " + name );
-			int value = entry.getValue();
-			System.out.println("ENTRY SCORE " + value );
-			
+//			System.out.println("ENTRY CONSIDERED " + name );
+//			int value = entry.getValue();
+//			System.out.println("ENTRY SCORE " + value );
 			for (List_Item item: sort_list){
 				if (item.url == name){
+//					System.out.println("MATCHES ITEM " + name);
 					List_Item final_item = item;
 					int index = sort_list.indexOf(final_item);
 					final_list.remove(index);
+//					System.out.println("SHOULD BE AT INDEX " + index);
 					final_list.add(index, entry);
+//					System.out.println("ADDED TO FINAL LIST");
 					
-					for (Map.Entry<String, Integer> abc: final_list){
-						System.out.println(abc.getKey());
-					}
+//					for (Map.Entry<String, Integer> abc: final_list){
+//						System.out.println(abc.getKey());
+//					}
 					break;
 				}
 			}
@@ -261,7 +293,11 @@ public class WikiSearch {
 			
 //			Integer score = item.score;
 //			Map.Entry<String,Integer> item_to_entry = new Map.Entry<String,Integer>(name,score);
-		} return final_list;
+
+		} 
+		Collections.reverse(final_list);
+//		System.out.println("FINAL LIST: " + final_list);
+		return final_list;
 	}
 
 	/**
@@ -272,31 +308,56 @@ public class WikiSearch {
 	 * @return
 	 */
 	public static WikiSearch search(String term, JedisIndex index) {
-		Map<String, Integer> map = index.getCounts(term);
+		System.out.println("Starting search........");
+		
+		Map<String, Integer> map = index.getCountsForms(term);
 		return new WikiSearch(map);
 	}
 
+	
 	public static void main(String[] args) throws IOException {
 		
-		// make a JedisIndex
-		Jedis jedis = JedisMaker.make();
-		JedisIndex index = new JedisIndex(jedis); 
 		
-		// search for the first term
-		String term1 = "java";
-		System.out.println("Query: " + term1);
-		WikiSearch search1 = search(term1, index);
-		search1.print();
+		String input = "";
+		Scanner sc = new Scanner(System.in);
+		do {
+			System.out.print("Enter your query here: ");
+			input = sc.nextLine() ;
+			// make a JedisIndex
+			Jedis jedis = JedisMaker.make();
+
+			JedisIndex index = new JedisIndex(jedis); 
+			
+			// search for the first term
+			System.out.println("Query: " + input);
+			WikiSearch search1 = search(input, index);
+			search1.print();
+			
+			System.out.println("Based on page similarity, you might also like to read:");
+			WikiFetcher wf = new WikiFetcher();
+			String best_url = search1.getTopEntry().getKey();
+			Elements paragraphs = wf.readWikipedia(best_url);
+			List<String> recommendations = index.findMostSimilar(best_url, paragraphs);
+			for (String page: recommendations){
+				System.out.println(page);
+			}
+			
+			
+			
+		} while (!input.equals(""));
+		 sc.close();
 		
-		// search for the second term
-		String term2 = "programming";
-		System.out.println("Query: " + term2);
-		WikiSearch search2 = search(term2, index);
-		search2.print();
 		
-		// compute the intersection of the searches
-		System.out.println("Query: " + term1 + " AND " + term2);
-		WikiSearch intersection = search1.and(search2);
-		intersection.print();
+		
+//		// search for the second term
+//		String term2 = "programming";
+//		System.out.println("Query: " + term2);
+//		WikiSearch search2 = search(term2, index);
+//		search2.print();
+//		
+//		// compute the intersection of the searches
+//		System.out.println("Query: " + term1 + " AND " + term2);
+//		WikiSearch intersection = search1.and(search2);
+//		intersection.print();
 	}
 }
