@@ -176,34 +176,33 @@ public class JedisIndex {
 //		System.out.println("DIFFERENT WORD FORMS: " + forms);
 		
 		for (String URL: URLs){
+				
+	//		System.out.println(tdidf.get("https://en.wikipedia.org/wiki/Consciousness"));
+	//		System.out.println("tdidf score of word for URL: "+ URL.substring(30) + tdidf.get(URL));
+			String title = URL.substring(30);
+			double final_count = tdidf.get(URL);
 			
-//		System.out.println(tdidf.get("https://en.wikipedia.org/wiki/Consciousness"));
-//		System.out.println("tdidf score of word for URL: "+ URL.substring(30) + tdidf.get(URL));
-		String title = URL.substring(30);
-		double final_count = tdidf.get(URL);
-		
-		// adding higher relevance if in title
-		if (title.toLowerCase().contains(term.toLowerCase())){
-			final_count = final_count + 10;
-		}
-			
-
-		// set how much value the forms should have
-		double score = 0.75;
-		
-		for(String form:forms){
-//			System.out.println("Considering form: " + form);
-			Map<String,Integer> form_tdidf = getTDIDFCounts(form);
-//			System.out.println("Number of entries for word map: " + form_tdidf.size());
-//			System.out.println("Getting URL entry: "+ form_tdidf.get(URL));
-			if (form_tdidf.get(URL) != null){
-			final_count = final_count + score*form_tdidf.get(URL);
-//			System.out.println("Count after adding "+ form + final_count);
+			// adding higher relevance if in title
+			if (title.toLowerCase().contains(term.toLowerCase())){
+				final_count = final_count + 10;
 			}
-		}
-//		System.out.println("Total count for URL: "+ final_count);
-		counter.put(URL, (int)final_count);
-		
+				
+	
+			// set how much value the forms should have
+			double score = 0.75;
+			
+			for(String form:forms){
+	//			System.out.println("Considering form: " + form);
+				Map<String,Integer> form_tdidf = getTDIDFCounts(form);
+	//			System.out.println("Number of entries for word map: " + form_tdidf.size());
+	//			System.out.println("Getting URL entry: "+ form_tdidf.get(URL));
+				if (form_tdidf.get(URL) != null){
+				final_count = final_count + score*form_tdidf.get(URL);
+	//			System.out.println("Count after adding "+ form + final_count);
+				}
+			}
+	//		System.out.println("Total count for URL: "+ final_count);
+			counter.put(URL, (int)final_count);	
 		}
 //		System.out.println("FINAL MAP:" + tdidf);
 		return counter;
@@ -229,24 +228,37 @@ public class JedisIndex {
         int containing_docs = URLs.size();
         int df = containing_docs/total_docs;
 //        System.out.println("DF: " + df);
-        for (String URL: URLs){
-        	double count = 0;
-        	int tf = getCount(URL,term);
-        	
-        	if (tf != 0){
- 
-//        	System.out.println("TF: "+ tf); 
-        		count = tf;
-        	//handling divide by zero cases
-        		if(df != 0){
-        	count = Math.log(tf) - Math.log(1/df);
-        			}
-        	}
-//        	System.out.println("RELEVANCE SCORE of " + URL+ "is: "+ count);
-        	counter.put(URL, (int)Math.round(count));
-        	
-        	
+        Transaction t = jedis.multi();
+        for(String URL: URLs){
+        	String redisKey = termCounterKey(URL);
+			t.hget(redisKey, term);
         }
+        List<Object> res = t.exec();
+        
+        int i = 0;
+        for(String URL: URLs){
+        	Integer count = new Integer((String) res.get(i++));
+			counter.put(URL, count);
+        }
+        
+//        for (String URL: URLs){
+//        	double count = 0;
+//        	int tf = getCount(URL,term);
+//        	
+//        	if (tf != 0){
+// 
+////        	System.out.println("TF: "+ tf); 
+//        		count = tf;
+//        	//handling divide by zero cases
+//        		if(df != 0){
+//        	count = Math.log(tf) - Math.log(1/df);
+//        			}
+//        	}
+////        	System.out.println("RELEVANCE SCORE of " + URL+ "is: "+ count);
+//        	counter.put(URL, (int)Math.round(count));
+//        	
+//        	
+//        }
 		return counter;
 	}
 		
