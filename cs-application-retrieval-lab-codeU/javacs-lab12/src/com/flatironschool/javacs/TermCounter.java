@@ -57,13 +57,18 @@ public class TermCounter {
 	 */
 	public void processElements(Elements paragraphs) {
 		int i=1;
+		
 		for (Node node: paragraphs) {
 			processTree(node, i);
 			
 			//or instead get first sentence, from first 20 words-2 lines
 			// saving the word set of the first para to give higher relevance
 			
+			if (i == 3){
+				break;
+			}
 			i = i + 1;
+		
 		}
 	}
 	

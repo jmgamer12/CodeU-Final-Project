@@ -472,7 +472,7 @@ public class JedisIndex {
 		//index.deleteTermCounters();
 		//index.deleteURLSets();
         index.deleteAllKeys();
-		loadIndex(index);
+//		loadIndex(index);
 		
 //		Map<String, Integer> map = index.getCountsFaster("the");
 //		for (Entry<String, Integer> entry: map.entrySet()) {
@@ -521,6 +521,12 @@ public class JedisIndex {
 		url = "https://en.wikipedia.org/wiki/Philosophy";
 		paragraphs = wf.readWikipedia(url);
 		index.indexPage(url, paragraphs);
+		
+		
+		
+		
+		
+		
 		
 //		List<String> similar = index.findMostSimilar(url, paragraphs);
 //		System.out.println("SIMILAR: "+ similar);
