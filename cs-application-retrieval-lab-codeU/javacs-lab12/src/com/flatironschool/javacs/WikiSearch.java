@@ -78,7 +78,12 @@ public class WikiSearch {
 	
 	public Entry<String, Integer> getTopEntry(){
 		List<Entry<String, Integer>> entries = sort();
-		return entries.get(0);
+		if(entries.size() != 0){
+			return entries.get(0);
+		}
+		else{
+			return null;
+		}
 	}
 	
 	/**
@@ -331,15 +336,21 @@ public class WikiSearch {
 			// search for the first term
 			System.out.println("Query: " + input);
 			WikiSearch search1 = search(input, index);
-			search1.print();
 			
-			System.out.println("Based on page similarity, you might also like to read:");
-			WikiFetcher wf = new WikiFetcher();
-			String best_url = search1.getTopEntry().getKey();
-			Elements paragraphs = wf.readWikipedia(best_url);
-			List<String> recommendations = index.findMostSimilar(best_url, paragraphs);
-			for (String page: recommendations){
-				System.out.println(page);
+			if(search1.getTopEntry() != null){
+				search1.print();
+				
+				System.out.println("Based on page similarity, you might also like to read:");
+				WikiFetcher wf = new WikiFetcher();
+				String best_url = search1.getTopEntry().getKey();
+				Elements paragraphs = wf.readWikipedia(best_url);
+				List<String> recommendations = index.findMostSimilar(best_url, paragraphs);
+				for (String page: recommendations){
+					System.out.println(page);
+				}
+			}
+			else{
+				System.out.println("Page for given term could not be found \nPlease try searching a different term");
 			}
 			
 			
